@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl      = env("DIRECT_URL")
+}
+
+model User {
+  id               String       @id @default(cuid())
+  email            String       @unique
+  password         String
+  anonymousTag     String       @unique // e.g., Mom#1234
+  createdAt        DateTime     @default(now())
+  lastLogin        DateTime?
+  messagesSent     Message[]    @relation("SentMessages")
+  messagesReceived Message[]    @relation("ReceivedMessages")
+  blockedUsers     Block[]      @relation("UserBlocks")
+  blockedBy        Block[]      @relation("BlockedByUser")
+  reportsMade      Report[]     @relation("UserReports")
+  reportsReceived  Report[]     @relation("ReportsAboutUser")
+  threads          UserThread[]
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  senderId    String
+  receiverId  String
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User      @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content     String
+  createdAt   DateTime  @default(now())
+  readAt      DateTime?
+  isDeleted   Boolean   @default(false)
+  isAnonymous Boolean   @default(true)
+  threadId    String?
+  thread      Thread?   @relation(fields: [threadId], references: [id])
+  reports     Report[]
+}
+
+model Thread {
+  id            String       @id @default(cuid())
+  participants  UserThread[]
+  lastMessageAt DateTime?
+  lastMessage   String?
+  messages      Message[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// Join table for many-to-many relationship between User and Thread
+model UserThread {
+  id       String @id @default(cuid())
+  userId   String
+  threadId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread   Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, threadId])
+}
+
+model Block {
+  id            String   @id @default(cuid())
+  userId        String // who blocked
+  blockedUserId String
+  user          User     @relation("UserBlocks", fields: [userId], references: [id], onDelete: Cascade)
+  blockedUser   User?    @relation("BlockedByUser", fields: [blockedUserId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, blockedUserId])
+}
+
+model Report {
+  id             String   @id @default(cuid())
+  reportedById   String
+  reportedUserId String
+  messageId      String?
+  reason         String
+  status         String   @default("pending") // e.g., pending, reviewed, resolved
+  createdAt      DateTime @default(now())
+  reportedBy     User     @relation("UserReports", fields: [reportedById], references: [id], onDelete: Cascade)
+  reportedUser   User?    @relation("ReportsAboutUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  message        Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+}
