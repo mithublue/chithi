@@ -1,6 +1,6 @@
-# Chithi: Mom's Safe Haven
+# Chithi: Real time messaging
 
-Chithi is an anonymous messaging platform designed to give mothers a private space to connect, share experiences, and support each other. The app provides secure authentication, real-time chat, user blocking, and reporting to keep the community safe.
+Chithi is an anonymous messaging platform designed to give anyone a private space to connect, share experiences, and support each other. The app provides secure authentication, real-time chat, user blocking, and reporting to keep the community safe.
 
 ---
 
